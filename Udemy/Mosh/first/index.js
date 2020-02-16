@@ -1,11 +1,38 @@
 
 const express = require('express');
+const config = require('config')
+const startupDebugger = require('debug')('app:startup');
 const Joi = require('joi');
-//validation schema
-
+const logger = require('./log');
 const app = express();
 
-app.use(express.json()); 
+app.set('view engine','pug');
+app.set('views','./views'); // default
+
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`app: ${app.get('env')}`);
+
+// Configuration
+console.log('Application name:'+ config.get('name'));
+console.log('Mail server:'+ config.get('mail.host'));
+console.log('Mail password:'+ config.get('mail.password'));
+
+// app.use(express.json()); 
+app.use(express.urlencoded({extended : true}));
+app.use(express.static('public'));
+
+//custom middleware
+if(app.get('env') === 'development') {
+    app.use(logger); 
+    startupDebugger('Debug enabled...')
+}
+
+
+//custom middleware
+app.use(function(req, res, next) {
+    console.log('Authenticating...');
+    next();
+})
 
 const courses = [
     { id:1, name:'course1'},
@@ -14,7 +41,8 @@ const courses = [
 ]
 
 app.get('/', (req, res) => {
-    res.send('Hello world');
+    // res.send('Hello world');
+    res.render('index', { title: 'My express app', message: 'Hello world'});
 });
 
 app.get('/api/courses', (req, res) => {
